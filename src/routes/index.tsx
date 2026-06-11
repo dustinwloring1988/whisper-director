@@ -377,16 +377,35 @@ function DirectorApp() {
           </section>
         )}
 
-        {/* Footer / electron note */}
+        {/* Footer — Electron status */}
         <footer className="mt-16 rounded-xl border border-dashed border-border/70 p-5">
-          <div className="mb-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            coming in desktop build
+          <div className="mb-1 flex items-center justify-between">
+            <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+              {electronInfo ? "desktop mode" : "browser mode"}
+            </div>
+            {electronInfo && (
+              <span className="font-mono text-[10px] uppercase tracking-wider text-signal">
+                ● connected
+              </span>
+            )}
           </div>
-          <p className="text-sm text-muted-foreground">
-            Global hotkey from anywhere, auto-paste into the focused app, and bigger
-            whisper models running natively via whisper.cpp.
-          </p>
+          {electronInfo ? (
+            <p className="text-sm text-muted-foreground">
+              Press{" "}
+              <kbd className="rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[11px] text-foreground">
+                {electronInfo.hotkey.replace("CommandOrControl", electronInfo.platform === "darwin" ? "⌘" : "Ctrl")}
+              </kbd>{" "}
+              from any app to start dictating. Director hides itself and pastes the transcript
+              straight into wherever you were typing.
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Running in the browser. Package the Electron build to get a global hotkey and
+              auto-paste into any app — see <code className="text-foreground">README-electron.md</code>.
+            </p>
+          )}
         </footer>
+
       </main>
     </div>
   );
