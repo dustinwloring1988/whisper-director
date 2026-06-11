@@ -260,9 +260,8 @@ function DirectorApp() {
               <kbd className="hidden rounded border border-border bg-background px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground sm:inline">
                 space
               </kbd>
-
-              </kbd>
             </div>
+
           </div>
 
           {/* Model selector */}
