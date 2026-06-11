@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRecorder } from "@/hooks/use-recorder";
 import { transcribe } from "@/lib/whisper";
+import { getDirector, type DirectorInfo } from "@/lib/electron-bridge";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
