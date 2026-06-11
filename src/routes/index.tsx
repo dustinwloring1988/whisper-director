@@ -49,7 +49,11 @@ function DirectorApp() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [copied, setCopied] = useState(false);
   const [autoCopy, setAutoCopy] = useState(true);
+  const [autoPaste, setAutoPaste] = useState(true);
   const [hasGPU, setHasGPU] = useState<boolean | null>(null);
+  const [electronInfo, setElectronInfo] = useState<DirectorInfo | null>(null);
+  const handleToggleRef = useRef<() => void>(() => {});
+
 
   useEffect(() => {
     setHasGPU(typeof navigator !== "undefined" && !!(navigator as any).gpu);
