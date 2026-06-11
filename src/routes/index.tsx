@@ -104,8 +104,14 @@ function DirectorApp() {
         setTranscript(text);
         if (text) {
           setHistory((h) => [{ id: crypto.randomUUID(), text, at: Date.now(), ms }, ...h].slice(0, 25));
-          if (autoCopy) await copy(text);
+          const director = getDirector();
+          if (director && autoPaste) {
+            await director.pasteToPreviousApp(text);
+          } else if (autoCopy) {
+            await copy(text);
+          }
         }
+
       } catch (e: any) {
         setTranscript(`[error] ${e?.message ?? "transcription failed"}`);
       } finally {
