@@ -236,7 +236,7 @@ function DirectorApp() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <label className="flex cursor-pointer items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
                 <input
                   type="checkbox"
@@ -246,8 +246,21 @@ function DirectorApp() {
                 />
                 auto-copy
               </label>
+              {electronInfo && (
+                <label className="flex cursor-pointer items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={autoPaste}
+                    onChange={(e) => setAutoPaste(e.target.checked)}
+                    className="h-3 w-3 accent-signal"
+                  />
+                  auto-paste
+                </label>
+              )}
               <kbd className="hidden rounded border border-border bg-background px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground sm:inline">
                 space
+              </kbd>
+
               </kbd>
             </div>
           </div>
