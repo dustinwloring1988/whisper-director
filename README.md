@@ -1,6 +1,6 @@
 # Director
 
-![stt.png](./stt.png)
+![stt.png](./public/stt.png)
 
 ![npm version][npm-version-badge] ![License][license-badge]
 
