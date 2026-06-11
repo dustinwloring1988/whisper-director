@@ -123,7 +123,22 @@ function DirectorApp() {
       setTranscript("");
       await recorder.start();
     }
-  }, [recorder, modelId, autoCopy, copy]);
+  }, [recorder, modelId, autoCopy, autoPaste, copy]);
+
+  // Keep a stable ref so the electron hotkey listener always calls the latest version.
+  useEffect(() => {
+    handleToggleRef.current = handleToggle;
+  }, [handleToggle]);
+
+  // Electron: detect bridge + subscribe to the global hotkey.
+  useEffect(() => {
+    const director = getDirector();
+    if (!director) return;
+    director.getInfo().then(setElectronInfo).catch(() => {});
+    const off = director.onHotkey(() => handleToggleRef.current?.());
+    return off;
+  }, []);
+
 
   // Spacebar to record (when not typing)
   useEffect(() => {
