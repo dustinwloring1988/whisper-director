@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRecorder } from "@/hooks/use-recorder";
 import { transcribe } from "@/lib/whisper";
+import { getDirector, type DirectorInfo } from "@/lib/electron-bridge";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -47,7 +49,11 @@ function DirectorApp() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [copied, setCopied] = useState(false);
   const [autoCopy, setAutoCopy] = useState(true);
+  const [autoPaste, setAutoPaste] = useState(true);
   const [hasGPU, setHasGPU] = useState<boolean | null>(null);
+  const [electronInfo, setElectronInfo] = useState<DirectorInfo | null>(null);
+  const handleToggleRef = useRef<() => void>(() => {});
+
 
   useEffect(() => {
     setHasGPU(typeof navigator !== "undefined" && !!(navigator as any).gpu);
@@ -98,8 +104,14 @@ function DirectorApp() {
         setTranscript(text);
         if (text) {
           setHistory((h) => [{ id: crypto.randomUUID(), text, at: Date.now(), ms }, ...h].slice(0, 25));
-          if (autoCopy) await copy(text);
+          const director = getDirector();
+          if (director && autoPaste) {
+            await director.pasteToPreviousApp(text);
+          } else if (autoCopy) {
+            await copy(text);
+          }
         }
+
       } catch (e: any) {
         setTranscript(`[error] ${e?.message ?? "transcription failed"}`);
       } finally {
@@ -111,7 +123,22 @@ function DirectorApp() {
       setTranscript("");
       await recorder.start();
     }
-  }, [recorder, modelId, autoCopy, copy]);
+  }, [recorder, modelId, autoCopy, autoPaste, copy]);
+
+  // Keep a stable ref so the electron hotkey listener always calls the latest version.
+  useEffect(() => {
+    handleToggleRef.current = handleToggle;
+  }, [handleToggle]);
+
+  // Electron: detect bridge + subscribe to the global hotkey.
+  useEffect(() => {
+    const director = getDirector();
+    if (!director) return;
+    director.getInfo().then(setElectronInfo).catch(() => {});
+    const off = director.onHotkey(() => handleToggleRef.current?.());
+    return off;
+  }, []);
+
 
   // Spacebar to record (when not typing)
   useEffect(() => {
@@ -209,7 +236,7 @@ function DirectorApp() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <label className="flex cursor-pointer items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
                 <input
                   type="checkbox"
@@ -219,10 +246,22 @@ function DirectorApp() {
                 />
                 auto-copy
               </label>
+              {electronInfo && (
+                <label className="flex cursor-pointer items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={autoPaste}
+                    onChange={(e) => setAutoPaste(e.target.checked)}
+                    className="h-3 w-3 accent-signal"
+                  />
+                  auto-paste
+                </label>
+              )}
               <kbd className="hidden rounded border border-border bg-background px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground sm:inline">
                 space
               </kbd>
             </div>
+
           </div>
 
           {/* Model selector */}
@@ -338,16 +377,35 @@ function DirectorApp() {
           </section>
         )}
 
-        {/* Footer / electron note */}
+        {/* Footer — Electron status */}
         <footer className="mt-16 rounded-xl border border-dashed border-border/70 p-5">
-          <div className="mb-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            coming in desktop build
+          <div className="mb-1 flex items-center justify-between">
+            <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+              {electronInfo ? "desktop mode" : "browser mode"}
+            </div>
+            {electronInfo && (
+              <span className="font-mono text-[10px] uppercase tracking-wider text-signal">
+                ● connected
+              </span>
+            )}
           </div>
-          <p className="text-sm text-muted-foreground">
-            Global hotkey from anywhere, auto-paste into the focused app, and bigger
-            whisper models running natively via whisper.cpp.
-          </p>
+          {electronInfo ? (
+            <p className="text-sm text-muted-foreground">
+              Press{" "}
+              <kbd className="rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[11px] text-foreground">
+                {electronInfo.hotkey.replace("CommandOrControl", electronInfo.platform === "darwin" ? "⌘" : "Ctrl")}
+              </kbd>{" "}
+              from any app to start dictating. Director hides itself and pastes the transcript
+              straight into wherever you were typing.
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Running in the browser. Package the Electron build to get a global hotkey and
+              auto-paste into any app — see <code className="text-foreground">README-electron.md</code>.
+            </p>
+          )}
         </footer>
+
       </main>
     </div>
   );
